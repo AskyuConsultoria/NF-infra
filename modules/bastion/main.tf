@@ -5,6 +5,7 @@ resource "aws_instance" "main-public" {
   key_name        = var.pbkey_name
   security_groups = var.security_groups
   subnet_id       = var.public_subnet_id 
+  iam_instance_profile = "LabInstanceProfile"
 
   tags = {
     Name = "instancia-publica"

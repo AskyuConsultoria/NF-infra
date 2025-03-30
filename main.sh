@@ -18,9 +18,9 @@ if [[ -z "$PUBLIC_IP" || -z "$PRIVATE_IP" ]]; then
 fi
 
 
-echo "[4] Iniciando provisionamento..."
-chmod +x deploy.sh
-./deploy.sh "$PUBLIC_IP" "$PRIVATE_IP"
+# echo "[4] Iniciando provisionamento..."
+# chmod +x deploy.sh
+# ./deploy.sh "$PUBLIC_IP" "$PRIVATE_IP"
 
 chmod +x deploy_bastion.sh
 ./deploy_bastion.sh "$PUBLIC_IP" "$PRIVATE_IP"

@@ -8,11 +8,12 @@ chmod +x generate_conf.sh
 bash generate_conf.sh $PUBLIC_IP
 
 scp -i "$BASTION_KEY" -o StrictHostKeyChecking=no "default.conf" "$USER@$PUBLIC_IP:/home/ubuntu"
+scp -i "$BASTION_KEY" -o StrictHostKeyChecking=no "backend.dockerfile" "$USER@$PUBLIC_IP:/home/ubuntu"
 
 ssh -i "$BASTION_KEY" "$USER@$PUBLIC_IP" << EOF
- git clone https://github.com/AskyuConsultoria/Gestio-deployment-website.git
- git clone --branch deploy-2025-03-14 --single-branch https://github.com/AskyuConsultoria/Gestio-front-api.git
- git clone https://github.com/AskyuConsultoria/Gestio-deployment-backend.git
+ git clone https://github.com/AskyuConsultoria/NF-deployment-website.git
+ git clone https://github.com/AskyuConsultoria/NFSiteWeb.git
+ git clone https://github.com/AskyuConsultoria/NF-deployment-backend.git
 
  sudo apt update -y
  sudo apt upgrade -y
@@ -27,10 +28,25 @@ ssh -i "$BASTION_KEY" "$USER@$PUBLIC_IP" << EOF
    echo "Docker já está instalado. Pulando a instalação."
  fi
 
- sudo docker build -t backend-image -f ./Gestio-deployment-backend/backend.dockerfile .
- sudo docker run --name backend-container --network host -e SPRING_DATASOURCE_URL="jdbc:mysql://$PRIVATE_IP:3306/askyu" -d -p 8080:8080 backend-image 
+AWS_ACCESS_KEY_ID=$(awk -F ' = ' '/aws_access_key_id/ {print $2}' ~/.aws/credentials)
+AWS_SECRET_ACCESS_KEY=$(awk -F ' = ' '/aws_secret_access_key/ {print $2}' ~/.aws/credentials)
+AWS_SESSION_TOKEN=$(awk -F ' = ' '/aws_session_token/ {print $2}' ~/.aws/credentials)
 
- sudo docker build -t website-image -f Gestio-deployment-website/install_website.dockerfile .
+export AWS_ACCESS_KEY_ID
+export AWS_SECRET_ACCESS_KEY
+export AWS_SESSION_TOKEN
+
+
+
+ sudo docker build -t backend-image -f backend.dockerfile .
+ sudo docker run -d --name backend-container \
+           -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
+           -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" \
+           -e AWS_SESSION_TOKEN="$AWS_SESSION_TOKEN" \
+           -e AWS_REGION="us-east-1" \
+           -p 8080:8080 backend-image 
+
+ sudo docker build -t website-image -f NF-deployment-website/install_website.dockerfile .
  sudo docker run --name website-container --network host -d -p 80:80 website-image
 EOF
 

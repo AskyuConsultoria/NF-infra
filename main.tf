@@ -18,6 +18,10 @@ module "vpc" {
   private_subnet_cidr = var.private_subnet_cidr
 }   
 
+resource "aws_s3_bucket" "public_bucket" {
+  bucket = "askyu.nf.solution.s3"
+}
+
 module "bastion" {
   source = "./modules/bastion"
   ami           = var.ami
