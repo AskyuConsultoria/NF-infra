@@ -18,8 +18,12 @@ module "vpc" {
   private_subnet_cidr = var.private_subnet_cidr
 }   
 
-resource "aws_s3_bucket" "public_bucket" {
-  bucket = "askyu.nf.solution.s3"
+resource "aws_s3_bucket" "bucket_raw_03231053" {
+  bucket = "bucket-raw-03231053-040425"
+}
+
+resource "aws_s3_bucket" "bucket_trusted_03231053" {
+  bucket = "bucket-trusted-03231053-040425"
 }
 
 module "bastion" {
@@ -31,21 +35,10 @@ module "bastion" {
   public_subnet_id = module.vpc.public_subnet_id
 }   
 
-module "private_instance" {
-  source = "./modules/private_instance"
-  ami           = var.ami
-  private_instance_type = var.private_instance_type
-  pvkey_name       = var.pvkey_name
-  security_groups = [module.vpc.security_group_id]
-  private_subnet_id = module.vpc.private_subnet_id
-}   
-
 output "bastion_public_ip" {
   value = module.bastion.bastion_public_ip
 }
 
-output "private_instance_ip" {
-  value = module.private_instance.private_instance_ip
-}
+
 
 
