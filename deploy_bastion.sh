@@ -1,6 +1,8 @@
 #!/bin/bash
 PUBLIC_IP=$1
 PRIVATE_IP=$2
+RAW_UNS_BUCKET_NAME=$3
+
 BASTION_KEY="./chaves/pbkey-ges" 
 USER="ubuntu"
 
@@ -36,14 +38,13 @@ export AWS_ACCESS_KEY_ID
 export AWS_SECRET_ACCESS_KEY
 export AWS_SESSION_TOKEN
 
-
-
  sudo docker build -t backend-image -f backend.dockerfile .
  sudo docker run -d --name backend-container \
            -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
            -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" \
            -e AWS_SESSION_TOKEN="$AWS_SESSION_TOKEN" \
            -e AWS_REGION="us-east-1" \
+           -e AWS_BUCKET_NAME="$RAW_UNS_BUCKET_NAME" \
            -p 8080:8080 backend-image 
 
  sudo docker build -t website-image -f NF-deployment-website/install_website.dockerfile .

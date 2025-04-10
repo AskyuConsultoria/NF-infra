@@ -18,8 +18,20 @@ module "vpc" {
   private_subnet_cidr = var.private_subnet_cidr
 }   
 
-resource "aws_s3_bucket" "public_bucket" {
-  bucket = "askyu.nf.solution.s3"
+module "bucket" {
+  source = "./modules/bucket"
+}
+
+output "unstructured-bucket-name" {
+  value = module.bucket.raw_unstructured_bucket_name
+}
+
+output "structured-bucket-name" {
+  value = module.bucket.raw_structured_bucket_name
+}
+
+output "trusted-bucket-name" {
+  value = module.bucket.trusted_bucket_name
 }
 
 module "bastion" {
