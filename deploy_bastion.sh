@@ -2,15 +2,18 @@
 PUBLIC_IP=$1
 PRIVATE_IP=$2
 RAW_UNS_BUCKET_NAME=$3
+RAW_ST_BUCKET_NAME=$4
+TRUSTED_BUCKET=$5
 
 BASTION_KEY="./chaves/pbkey-ges" 
 USER="ubuntu"
 
 chmod +x generate_conf.sh 
-bash generate_conf.sh $PUBLIC_IP
+bash generate_conf.sh $PUBLIC_IP $RAW_UNS_BUCKET_NAME $RAW_ST_BUCKET_NAME $TRUSTED_BUCKET
 
 scp -i "$BASTION_KEY" -o StrictHostKeyChecking=no "default.conf" "$USER@$PUBLIC_IP:/home/ubuntu"
 scp -i "$BASTION_KEY" -o StrictHostKeyChecking=no "backend.dockerfile" "$USER@$PUBLIC_IP:/home/ubuntu"
+scp -i "$BASTION_KEY" -o StrictHostKeyChecking=no ".env" "$USER@$PUBLIC_IP:/home/ubuntu"
 
 ssh -i "$BASTION_KEY" "$USER@$PUBLIC_IP" << EOF
  git clone https://github.com/AskyuConsultoria/NF-deployment-website.git
@@ -49,6 +52,15 @@ export AWS_SESSION_TOKEN
 
  sudo docker build -t website-image -f NF-deployment-website/install_website.dockerfile .
  sudo docker run --name website-container --network host -d -p 80:80 website-image
+
+
+ git clone https://github.com/AskyuConsultoria/NF-deployment-etl.git
+ sudo chmod +x NF-deployment-etl/run.sh
+ sudo chmod +x NF-deployment-etl/scheduler.sh
+ cp /home/ubuntu/.env ./NF-deployment-etl
+
+ sudo docker build -t python-image -f NF-deployment-etl/python.dockerfile .
+ sudo bash NF-deployment-etl/scheduler.sh 
 EOF
 
 

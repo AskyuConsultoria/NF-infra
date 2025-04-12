@@ -1,4 +1,8 @@
 PUBLIC_IP=$1
+RAW_UNS_BUCKET_NAME=$2
+RAW_ST_BUCKET_NAME=$3
+TRUSTED_BUCKET_NAME=$4 
+
 
 
 cat << EOF > default.conf
@@ -24,11 +28,16 @@ server {
 EOF
 
 
-
 cat << EOF > backend.dockerfile
 FROM eclipse-temurin:21-jdk-alpine
 
 COPY ./NF-deployment-backend/nf-0.0.1.jar . 
 
 CMD ["java", "-jar", "nf-0.0.1.jar"]
+EOF
+
+cat << EOF > .env
+raw_unstructured_bucket=$RAW_UNS_BUCKET_NAME
+raw_structured_bucket=$RAW_ST_BUCKET_NAME
+trusted_bucket=$TRUSTED_BUCKET_NAME
 EOF
