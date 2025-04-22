@@ -34,6 +34,15 @@ output "trusted-bucket-name" {
   value = module.bucket.trusted_bucket_name
 }
 
+output "id_bucket_trusted" {
+  value = module.bucket.id_bucket_trusted
+}
+
+module "lambda" {
+  source = "./modules/lambda"
+  nome_bucket_trusted = module.bucket.trusted_bucket_name
+}
+
 module "bastion" {
   source = "./modules/bastion"
   ami           = var.ami

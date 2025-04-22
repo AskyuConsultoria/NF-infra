@@ -1,0 +1,1 @@
+variable "nome_bucket_trusted" {}
