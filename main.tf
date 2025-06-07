@@ -22,6 +22,10 @@ module "bucket" {
   source = "./modules/bucket"
 }
 
+module "api-gateway"{
+  source = "./modules/api-gateway"
+}
+
 output "unstructured-bucket-name" {
   value = module.bucket.raw_unstructured_bucket_name
 }
@@ -69,4 +73,6 @@ output "private_instance_ip" {
   value = module.private_instance.private_instance_ip
 }
 
-
+output "api_gateway_url" {
+  value = module.api-gateway.api_gateway_url
+}
