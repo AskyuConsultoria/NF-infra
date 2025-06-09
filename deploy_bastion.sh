@@ -48,6 +48,7 @@ export AWS_SESSION_TOKEN
            -e AWS_SESSION_TOKEN="$AWS_SESSION_TOKEN" \
            -e AWS_REGION="us-east-1" \
            -e AWS_BUCKET_NAME="$RAW_UNS_BUCKET_NAME" \
+           -e SPRING_DATASOURCE_URL="jdbc:mysql://$PRIVATE_IP:3306/syntro" \
            -p 8080:8080 backend-image 
 
  sudo docker build -t website-image -f NF-deployment-website/install_website.dockerfile .

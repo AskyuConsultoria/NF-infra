@@ -22,9 +22,6 @@ module "bucket" {
   source = "./modules/bucket"
 }
 
-module "api-gateway"{
-  source = "./modules/api-gateway"
-}
 
 output "unstructured-bucket-name" {
   value = module.bucket.raw_unstructured_bucket_name
@@ -63,7 +60,13 @@ module "private_instance" {
   pvkey_name       = var.pvkey_name
   security_groups = [module.vpc.security_group_id]
   private_subnet_id = module.vpc.private_subnet_id
-}   
+}
+
+
+module "api-gateway"{
+  source = "./modules/api-gateway"
+  backend_url = "http://${module.bastion.bastion_public_ip}:8080/nf/solicitacao-servico"
+}
 
 output "bastion_public_ip" {
   value = module.bastion.bastion_public_ip

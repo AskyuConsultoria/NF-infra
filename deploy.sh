@@ -12,6 +12,8 @@ USER="ubuntu"
 
 echo "[1] Enviando arquivo para a instância pública..."
 scp -i "$BASTION_KEY" -o StrictHostKeyChecking=no "./scripts/get-docker.sh" "$USER@$PUBLIC_IP:$REMOTE_PATH"
+scp -i "$BASTION_KEY" -o StrictHostKeyChecking=no "./scripts/mysql.dockerfile" "$USER@$PUBLIC_IP:$REMOTE_PATH"
+scp -i "$BASTION_KEY" -o StrictHostKeyChecking=no "./scripts/database_hom_syntro.sql" "$USER@$PUBLIC_IP:$REMOTE_PATH"
 
 if [ $? -ne 0 ]; then
   echo "❌ Erro ao enviar arquivos para a instância pública!"
@@ -46,7 +48,7 @@ ssh -i "$BASTION_KEY" "$USER@$PUBLIC_IP" << EOF
   echo "[5] Enviando dockerfile para a máquina privada"
   scp -i /home/ubuntu/pvkey-ges -o StrictHostKeyChecking=no "/tmp/get-docker.sh" "$USER@$PRIVATE_IP:/home/ubuntu"
   scp -i /home/ubuntu/pvkey-ges -o StrictHostKeyChecking=no "/tmp/mysql.dockerfile" "$USER@$PRIVATE_IP:/home/ubuntu"
-  scp -i /home/ubuntu/pvkey-ges -o StrictHostKeyChecking=no "/tmp/database_hom_gestio.sql" "$USER@$PRIVATE_IP:/home/ubuntu"
+  scp -i /home/ubuntu/pvkey-ges -o StrictHostKeyChecking=no "/tmp/database_hom_syntro.sql" "$USER@$PRIVATE_IP:/home/ubuntu"
   
   ssh -i /home/ubuntu/pvkey-ges "$USER@$PRIVATE_IP"
 
