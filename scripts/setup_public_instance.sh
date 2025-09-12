@@ -1,6 +1,6 @@
 #!/bin/bash
 git clone https://github.com/AskyuConsultoria/Gestio-deployment-website.git
-git clone https://github.com/AskyuConsultoria/NFSiteWeb.git
+git clone https://github.com/AskyuConsultoria/SyntroWeb.git
 
 sudo apt update -y
 sudo apt upgrade -y

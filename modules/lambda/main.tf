@@ -1,6 +1,6 @@
 
 resource "aws_sns_topic" "mensagem_trusted" {
-    name_prefix = "askyu-nf-message-trusted"
+    name_prefix = "askyu-syntro-message-trusted"
 }
 
 resource "aws_sns_topic_subscription" "mensagem_trusted" {

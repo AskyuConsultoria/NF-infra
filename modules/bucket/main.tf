@@ -1,6 +1,6 @@
 
 resource "aws_s3_bucket" "unstructured_bucket_raw" {
-  bucket_prefix = "askyu-nf-unstructured-raw"
+  bucket_prefix = "askyu-syntro-unstructured-raw"
   force_destroy = true
 
   tags = {
@@ -9,7 +9,7 @@ resource "aws_s3_bucket" "unstructured_bucket_raw" {
 }
 
 resource "aws_s3_bucket" "structured_bucket_raw" {
-  bucket_prefix = "askyu-nf-structured-raw"
+  bucket_prefix = "askyu-syntro-structured-raw"
   force_destroy = true
 
   tags = {
@@ -19,7 +19,7 @@ resource "aws_s3_bucket" "structured_bucket_raw" {
 
 
 resource "aws_s3_bucket" "trusted_bucket" {
-  bucket_prefix = "askyu-nf-trusted"
+  bucket_prefix = "askyu-syntro-trusted"
   force_destroy = true
 
   tags = {

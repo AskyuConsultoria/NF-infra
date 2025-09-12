@@ -17,8 +17,8 @@ server {
         try_files \$uri \$uri/ /index.html;
     }
 
-    location /nf {
-        proxy_pass http://localhost:8080/nf;
+    location /syntro {
+        proxy_pass http://localhost:8080/syntro;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
@@ -31,9 +31,9 @@ EOF
 cat << EOF > backend.dockerfile
 FROM eclipse-temurin:21-jdk-alpine
 
-COPY ./NF-deployment-backend/nf-0.0.3.jar . 
+COPY ./syntro-deployment-backend/syntro-0.0.3.jar . 
 
-CMD ["java", "-jar", "nf-0.0.3.jar"]
+CMD ["java", "-jar", "syntro-0.0.3.jar"]
 EOF
 
 cat << EOF > .env

@@ -65,7 +65,7 @@ module "private_instance" {
 
 module "api-gateway"{
   source = "./modules/api-gateway"
-  backend_url = "http://${module.bastion.bastion_public_ip}:8080/nf/solicitacao-servico"
+  backend_url = "http://${module.bastion.bastion_public_ip}:8080/syntro/solicitacao-servico"
 }
 
 output "bastion_public_ip" {

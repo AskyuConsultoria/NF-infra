@@ -16,9 +16,9 @@ scp -i "$BASTION_KEY" -o StrictHostKeyChecking=no "backend.dockerfile" "$USER@$P
 scp -i "$BASTION_KEY" -o StrictHostKeyChecking=no ".env" "$USER@$PUBLIC_IP:/home/ubuntu"
 
 ssh -i "$BASTION_KEY" "$USER@$PUBLIC_IP" << EOF
- git clone https://github.com/AskyuConsultoria/NF-deployment-website.git
- git clone https://github.com/AskyuConsultoria/NFSiteWeb.git
- git clone https://github.com/AskyuConsultoria/NF-deployment-backend.git
+ git clone https://github.com/AskyuConsultoria/syntro-deployment-website.git
+ git clone https://github.com/AskyuConsultoria/SyntroWeb.git
+ git clone https://github.com/AskyuConsultoria/syntro-deployment-backend.git
 
  sudo apt update -y
  sudo apt upgrade -y
@@ -51,17 +51,17 @@ export AWS_SESSION_TOKEN
            -e SPRING_DATASOURCE_URL="jdbc:mysql://$PRIVATE_IP:3306/syntro" \
            -p 8080:8080 backend-image 
 
- sudo docker build -t website-image -f NF-deployment-website/install_website.dockerfile .
+ sudo docker build -t website-image -f syntro-deployment-website/install_website.dockerfile .
  sudo docker run --name website-container --network host -d -p 80:80 website-image
 
 
- git clone https://github.com/AskyuConsultoria/NF-deployment-etl.git
- sudo chmod +x NF-deployment-etl/run.sh
- sudo chmod +x NF-deployment-etl/scheduler.sh
- cp /home/ubuntu/.env ./NF-deployment-etl
+ git clone https://github.com/AskyuConsultoria/syntro-deployment-etl.git
+ sudo chmod +x syntro-deployment-etl/run.sh
+ sudo chmod +x syntro-deployment-etl/scheduler.sh
+ cp /home/ubuntu/.env ./syntro-deployment-etl
 
- sudo docker build -t python-image -f NF-deployment-etl/python.dockerfile .
- sudo bash NF-deployment-etl/scheduler.sh 
+ sudo docker build -t python-image -f syntro-deployment-etl/python.dockerfile .
+ sudo bash syntro-deployment-etl/scheduler.sh 
 EOF
 
 
