@@ -10,7 +10,7 @@ server {
     listen 80;
     server_name $PUBLIC_IP;
 
-    root /var/www/html/public;
+    root /var/www/html/src;
     index index.html;
 
     location / {
