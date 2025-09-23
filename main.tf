@@ -62,6 +62,16 @@ module "private_instance" {
   private_subnet_id = module.vpc.private_subnet_id
 }
 
+module "jupyter" {
+  source = "./modules/jupyter"
+  ami           = var.ami
+  jupyter_instance_type = var.jupyter_instance_type
+  pbkey_jupyter_name        = var.pbkey_jupyter_name
+  security_groups = [module.vpc.security_group_id]
+  public_subnet_id = module.vpc.public_subnet_id
+  user_data = file("jupyter.yaml")
+}   
+
 
 module "api-gateway"{
   source = "./modules/api-gateway"
@@ -74,6 +84,10 @@ output "bastion_public_ip" {
 
 output "private_instance_ip" {
   value = module.private_instance.private_instance_ip
+}
+
+output "jupyter_public_ip" {
+  value = module.jupyter.jupyter_public_ip
 }
 
 output "api_gateway_url" {

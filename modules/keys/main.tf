@@ -7,3 +7,8 @@ resource "aws_key_pair" "main-private" {
   key_name   = "pvkey-ges"
   public_key = file("~/.ssh/pvkey-ges.pub")
 }
+
+resource "aws_key_pair" "jupyter" {
+  key_name   = "pbkey-jupyter"
+  public_key = file("~/.ssh/pbkey-jupyter.pub")
+}

@@ -17,7 +17,7 @@ scp -i "$BASTION_KEY" -o StrictHostKeyChecking=no ".env" "$USER@$PUBLIC_IP:/home
 
 ssh -i "$BASTION_KEY" "$USER@$PUBLIC_IP" << EOF
  git clone https://github.com/AskyuConsultoria/syntro-deployment-website.git
- git clone https://github.com/AskyuConsultoria/SyntroWeb.git
+ git clone --branch development --single-branch https://github.com/AskyuConsultoria/SyntroWeb.git
  git clone https://github.com/AskyuConsultoria/syntro-deployment-backend.git
 
  sudo apt update -y

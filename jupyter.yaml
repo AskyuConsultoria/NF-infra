@@ -1,0 +1,36 @@
+#cloud-config
+package_update: true
+packages:
+  - docker.io
+  - docker-compose
+
+runcmd:
+  # Garante que o Docker rode
+  - systemctl enable docker
+  - systemctl start docker
+  - sleep 5  # dá um tempinho para o Docker iniciar
+
+  # Cria diretório dos notebooks
+  - mkdir -p /home/ubuntu/notebooks
+  - chown -R ubuntu:ubuntu /home/ubuntu/notebooks
+
+  # Cria docker-compose.yaml
+  - |
+    cat <<EOF > /home/ubuntu/docker-compose.yaml
+    version: "3.9"
+    services:
+      jupyter:
+        image: jupyter/base-notebook:latest
+        container_name: jupyterlab
+        restart: always
+        ports:
+          - "8888:8888"
+        volumes:
+          - /home/ubuntu/notebooks:/home/jovyan/work
+        environment:
+          - JUPYTER_TOKEN=AsiaOmor123
+    EOF
+
+  # Sobe o serviço com docker-compose
+  - docker-compose -f /home/ubuntu/docker-compose.yaml up -d
+  - chown -R ubuntu:ubuntu /home/ubuntu/docker-compose.yaml

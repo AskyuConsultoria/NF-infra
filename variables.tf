@@ -1,6 +1,7 @@
 
 variable "pvkey_name" {}
 variable "pbkey_name" {}
+variable "pbkey_jupyter_name" {}
 
 variable "vpc_cidr_block" {
   description = "CIDR da VPC"
@@ -21,4 +22,4 @@ variable "private_subnet_cidr" {
 variable "ami" {}
 variable "bastion_instance_type" {}
 variable "private_instance_type" {}
-
+variable "jupyter_instance_type" {}

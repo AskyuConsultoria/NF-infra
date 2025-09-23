@@ -1,0 +1,13 @@
+version: "3.9"
+services:
+  jupyter:
+    image: jupyter/base-notebook:latest
+    container_name: jupyterlab
+    restart: always
+    ports:
+      - "8888:8888"
+    volumes:
+      - /home/ubuntu/notebooks:/home/jovyan/work
+    environment:
+      - JUPYTER_TOKEN=AsiaOmor123
+    command: start-notebook.sh --ip=0.0.0.0 --NotebookApp.token='AsiaOmor123'
