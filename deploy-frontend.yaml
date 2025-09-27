@@ -1,0 +1,20 @@
+---
+- name: Deploy do Front-end
+  hosts: frontend
+  become: yes
+  tasks:
+  - name: Pull da imagem do Front-end 
+    community.docker.docker_image:
+      name: kayk4/syntro-frontend:latest  
+      repository: frontend-image:latest 
+      state: present
+      source: pull 
+  - name: Construção do container de Front-end
+    community.docker.docker_container:
+      name: website-container
+      image: frontend-image:latest
+      state: started
+      restart_policy: always
+      recreate: true 
+      published_ports:
+      - "80:80"

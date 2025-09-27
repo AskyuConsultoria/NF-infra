@@ -35,6 +35,10 @@ output "trusted-bucket-name" {
   value = module.bucket.trusted_bucket_name
 }
 
+output "inventory-bucket-name" {
+  value = module.bucket.inventory_bucket_name
+}
+
 output "id_bucket_trusted" {
   value = module.bucket.id_bucket_trusted
 }
@@ -92,4 +96,28 @@ output "jupyter_public_ip" {
 
 output "api_gateway_url" {
   value = module.api-gateway.api_gateway_url
+}
+
+resource "local_file" "inventory_ini" {
+  content = <<EOT
+  [backend]
+  ${module.bastion.bastion_public_ip} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/pbkey-ges 
+
+  [backend:vars]
+  aws_access_key_id=${var.aws_access_key_id}
+  aws_secret_access_key=${var.aws_secret_access_key}
+  aws_session_token=${var.aws_session_token}
+  aws_region=us-east-1
+  aws_bucket_name=${module.bucket.raw_unstructured_bucket_name}
+  spring_datasource_url=jdbc:mysql://${module.private_instance.private_instance_ip}:3306/syntro
+
+
+  [frontend]
+  ${module.bastion.bastion_public_ip} ansbible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/pbkey-ges
+
+  [database]
+  ${module.private_instance.private_instance_ip} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/pvkey-ges ansible_ssh_common_args='-o ProxyCommand="ssh -i ~/.ssh/pbkey-ges  -W %h:%p ubuntu@${module.bastion.bastion_public_ip} "'
+  EOT
+
+  filename="${path.module}/inventory.ini"
 }

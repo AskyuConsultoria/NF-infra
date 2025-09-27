@@ -1,0 +1,27 @@
+---
+- name: Deploy do Back-end
+  hosts: backend
+  become: yes
+
+  tasks:
+  - name: Pull da Imagem atualizada
+    community.docker.docker_image:
+      name: kayk4/syntro-backend:latest  
+      state: present
+      repository: backend-image:latest   
+      source: pull
+  - name: Criar container do Back-end 
+    community.docker.docker_container:
+      name: backend-container
+      state: started 
+      recreate: true
+      image: backend-image:latest
+      published_ports:
+      - "8080:8080"
+      env:
+          AWS_ACCESS_KEY_ID: "{{ hostvars[inventory_hostname].aws_access_key_id }}"
+          AWS_SECRET_ACCESS_KEY: "{{ hostvars[inventory_hostname].aws_secret_access_key }}"
+          AWS_SESSION_TOKEN: "{{ hostvars[inventory_hostname].aws_session_token }}"
+          AWS_REGION: "{{ hostvars[inventory_hostname].aws_region }}"
+          AWS_BUCKET_NAME: "{{ hostvars[inventory_hostname].aws_bucket_name }}"
+          SPRING_DATASOURCE_URL: "{{ hostvars[inventory_hostname].spring_datasource_url }}"

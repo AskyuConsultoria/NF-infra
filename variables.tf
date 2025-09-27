@@ -3,6 +3,11 @@ variable "pvkey_name" {}
 variable "pbkey_name" {}
 variable "pbkey_jupyter_name" {}
 
+variable "aws_access_key_id" {}
+variable "aws_secret_access_key" {}
+variable "aws_session_token" {}
+
+
 variable "vpc_cidr_block" {
   description = "CIDR da VPC"
   type        = string

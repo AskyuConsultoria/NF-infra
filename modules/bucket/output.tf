@@ -13,3 +13,7 @@ output "trusted_bucket_name" {
 output "id_bucket_trusted" {
     value = aws_s3_bucket.trusted_bucket.id
 }
+
+output "inventory_bucket_name" {
+    value = aws_s3_bucket.inventory_bucket.bucket
+}

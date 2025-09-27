@@ -26,3 +26,13 @@ resource "aws_s3_bucket" "trusted_bucket" {
     Name = "bucket-raw-3"
   }
 }
+
+
+resource "aws_s3_bucket" "inventory_bucket" {
+  bucket_prefix = "askyu-syntro-inventory"
+  force_destroy = true 
+
+  tags = {
+    Name = "bucket-inventory"
+  }
+}
