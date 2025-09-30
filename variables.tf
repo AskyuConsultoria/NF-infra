@@ -2,11 +2,16 @@
 variable "pvkey_name" {}
 variable "pbkey_name" {}
 variable "pbkey_jupyter_name" {}
+variable "aws_region" {
+  default = "us-east-1"
+}
 
 variable "aws_access_key_id" {}
 variable "aws_secret_access_key" {}
 variable "aws_session_token" {}
-
+variable "environment" {
+  default = "askyu-syntro"
+}
 
 variable "vpc_cidr_block" {
   description = "CIDR da VPC"
@@ -15,13 +20,13 @@ variable "vpc_cidr_block" {
 
 
 variable "public_subnet_cidr" {
+  type = list(any)
   description = "CIDR da Subnet Pública"
-  type        = string
 }
 
 variable "private_subnet_cidr" {
+  type = string
   description = "CIDR da Subnet Privada"
-  type        = string
 }
 
 variable "ami" {}

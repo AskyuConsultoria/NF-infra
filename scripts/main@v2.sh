@@ -35,8 +35,6 @@ scp -i ~/.ssh/pbkey-ges -o StrictHostKeyChecking=no ~/.ssh/pvkey-ges "ubuntu@$PU
 ssh -i ~/.ssh/pbkey-ges "ubuntu@$PUBLIC_IP" "ssh-keyscan -H $PRIVATE_IP" >> ~/.ssh/known_hosts
 
 
-
-
 if [[ -z "$PUBLIC_IP" || -z "$PRIVATE_IP" ]]; then
   echo "❌ Erro: Não foi possível obter os IPs das instâncias!"
   exit 1

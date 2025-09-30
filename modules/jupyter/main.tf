@@ -4,7 +4,7 @@ resource "aws_instance" "jupyter-instance" {
   associate_public_ip_address = true
   key_name        = var.pbkey_jupyter_name
   security_groups = var.security_groups
-  subnet_id       = var.public_subnet_id 
+  subnet_id       = element(var.public_subnet_id, 0) 
   iam_instance_profile = "LabInstanceProfile"
   user_data = var.user_data
 
