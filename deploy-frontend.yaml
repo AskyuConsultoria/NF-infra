@@ -1,20 +1,45 @@
 ---
-- name: Deploy do Front-end
+- name: Deploy geral do Front-end
   hosts: frontend
   become: yes
   tasks:
-  - name: Pull da imagem do Front-end 
-    community.docker.docker_image:
-      name: kayk4/syntro-frontend:latest  
-      repository: frontend-image:latest 
-      state: present
-      source: pull 
-  - name: Construção do container de Front-end
-    community.docker.docker_container:
-      name: website-container
-      image: frontend-image:latest
-      state: started
-      restart_policy: always
-      recreate: true 
-      published_ports:
-      - "80:80"
+    - name: Pull da imagem do Front-end 
+      community.docker.docker_image:
+        name: kayk4/syntro-frontend:latest  
+        repository: frontend-image:latest 
+        state: present
+        source: pull 
+
+    - name: Construção do container de Front-end
+      community.docker.docker_container:
+        name: website-container
+        image: frontend-image:latest
+        state: started
+        restart_policy: always
+        recreate: true 
+        published_ports:
+          - "80:80"
+
+- name: Customização da primeira instância do Front-end
+  hosts: frontend[0]
+  become: yes
+  vars:
+    background_color: red
+    header_text: "Esta é a instância modificada"
+  tasks:
+    - name: Alterar index.html dentro do container para teste do ALB
+      community.docker.docker_container_exec:
+        container: website-container
+        command: >
+          sh -c 'echo "<!DOCTYPE html>
+          <html lang=\"pt-br\">
+          <head>
+          <meta charset=\"UTF-8\">
+          <title>Teste ALB</title>
+          <style>body { background-color: {{ background_color }}; color: white; text-align: center; padding: 50px; }</style>
+          </head>
+          <body>
+          <h1>{{ header_text }}</h1>
+          </body>
+          </html>" > /usr/share/nginx/html/index.html'
+         

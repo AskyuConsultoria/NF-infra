@@ -21,18 +21,24 @@ terraform apply -var-file="envs/dev.tfvars" -var "aws_access_key_id=$AWS_ACCESS_
 
 
 echo "[3] Aguardando output do Terraform..."
-PUBLIC_IP=$(terraform output -raw bastion_public_ip)
+PUBLIC_IP=$(terraform output -json bastion_public_ip | jq -r '.[0][]')
+echo "DEBUG: PUBLIC_IP=$PUBLIC_IP"
 PRIVATE_IP=$(terraform output -raw private_instance_ip)
 RAW_UNS_BUCKET_NAME=$(terraform output -raw unstructured-bucket-name)
 RAW_ST_BUCKET_NAME=$(terraform output -raw structured-bucket-name)
 TRUSTED_BUCKET=$(terraform output -raw trusted-bucket-name)
 
 echo "[4] Salvando fingerprints"
-ssh-keyscan -H $PUBLIC_IP >> ~/.ssh/known_hosts
+for ip in $PUBLIC_IP; do
+  ssh-keyscan -H "$ip" >> ~/.ssh/known_hosts
+done
 
-echo "[5] Enviando chave privada para a instância pública..."
-scp -i ~/.ssh/pbkey-ges -o StrictHostKeyChecking=no ~/.ssh/pvkey-ges "ubuntu@$PUBLIC_IP:~"
-ssh -i ~/.ssh/pbkey-ges "ubuntu@$PUBLIC_IP" "ssh-keyscan -H $PRIVATE_IP" >> ~/.ssh/known_hosts
+echo "[5] Enviando chave privada para as instâncias públicas..."
+for ip in $PUBLIC_IP; do
+  scp -i ~/.ssh/pbkey-ges -o StrictHostKeyChecking=no ~/.ssh/pvkey-ges "ubuntu@$ip:~"
+  ssh -i ~/.ssh/pbkey-ges "ubuntu@$ip" "ssh-keyscan -H $PRIVATE_IP" >> ~/.ssh/known_hosts
+done
+
 
 
 if [[ -z "$PUBLIC_IP" || -z "$PRIVATE_IP" ]]; then
