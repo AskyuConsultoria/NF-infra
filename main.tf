@@ -17,7 +17,8 @@ module "vpc" {
   aws_region          = var.aws_region
   vpc_cidr_block      = var.vpc_cidr_block
   public_subnet_cidr  = var.public_subnet_cidr
-  private_subnet_cidr = var.private_subnet_cidr
+  private_subnet_cidr = var.private_subnet_cidr   
+  private_subnet_cidr_db = var.private_subnet_cidr_db
 }
 
 module "bucket" {
@@ -65,7 +66,16 @@ module "private_instance" {
   private_instance_type = var.private_instance_type
   pvkey_name       = var.pvkey_name
   security_groups = [module.vpc.security_group_id]
-  private_subnet_id = module.vpc.private_subnet_id
+  private_subnet_id  = module.vpc.private_subnet_id
+}
+
+module "db_instance" {
+  source = "./modules/db_instance"
+  ami           = var.ami
+  private_instance_type = var.private_instance_type
+  pvkey_name       = var.pvkey_name
+  security_groups = [module.vpc.security_group_id]
+  db_subnet_id = module.vpc.db_subnet_id
 }
 
 module "jupyter" {
@@ -89,8 +99,6 @@ module "lb" {
 }
 
 
-
-
 # module "api-gateway" {
 #   source      = "./modules/api-gateway"
 #   backend_url = "http://${module.bastion.bastion_public_ip}:8080/syntro/solicitacao-servico"
@@ -101,7 +109,11 @@ output "bastion_public_ip" {
 }
 
 output "private_instance_ip" {
-  value = module.private_instance.private_instance_ip
+  value = module.private_instance[*].private_instance_ip
+}
+
+output "db_instance_ip" {
+  value = module.db_instance.db_instance_ip
 }
 
 output "jupyter_public_ip" {
@@ -127,13 +139,16 @@ aws_secret_access_key=${var.aws_secret_access_key}
 aws_session_token=${var.aws_session_token}
 aws_region=us-east-1
 aws_bucket_name=${module.bucket.raw_unstructured_bucket_name}
-spring_datasource_url=jdbc:mysql://${module.private_instance.private_instance_ip}:3306/syntro
+spring_datasource_url=jdbc:mysql://${module.db_instance.db_instance_ip}:3306/syntro
 
 [frontend]
-${join("\n", [for ip in module.bastion.bastion_public_ip : "${ip} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/pbkey-ges"])}
+${join("\n", [
+  for idx, ip in module.bastion.bastion_public_ip :
+  "${ip} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/pbkey-ges backend_ip=${element(module.private_instance.private_instance_ip, idx)}"
+])}
 
 [database]
-${module.private_instance.private_instance_ip} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/pvkey-ges ansible_ssh_common_args='-o ProxyCommand="ssh -i ~/.ssh/pbkey-ges -W %h:%p ubuntu@${element(module.bastion.bastion_public_ip,0)}"'
+${module.db_instance.db_instance_ip} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/pvkey-ges ansible_ssh_common_args='-o ProxyCommand="ssh -i ~/.ssh/pbkey-ges -W %h:%p ubuntu@${element(module.bastion.bastion_public_ip,0)}"'
 EOT
 
   filename = "${path.module}/inventory.ini"

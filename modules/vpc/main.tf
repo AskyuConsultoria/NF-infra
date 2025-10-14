@@ -20,15 +20,49 @@ resource "aws_subnet" "main-public" {
   tags = { Name = "subnet-public-${count.index}" }
 }
 
+
 resource "aws_subnet" "main-private" {
   vpc_id     = aws_vpc.main.id
-  cidr_block = var.private_subnet_cidr 
+  cidr_block = var.private_subnet_cidr_db 
 
   tags = {
-    Name = "subnet-privada"
+    Name = "subnet-db"
   }
 }
 
+
+resource "aws_subnet" "main-backend" {
+  count             = length(var.private_subnet_cidr)
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = element(var.private_subnet_cidr,count.index)
+  availability_zone = element(local.availability_zones, count.index)
+  map_public_ip_on_launch = false
+
+  tags = {
+    Name = "private-subnet-${count.index}"
+    Role = "main-backend"
+  }
+}
+
+resource "aws_route_table" "main-backend-rt" {
+  count  = length(var.private_subnet_cidr)
+  vpc_id = aws_vpc.main.id
+
+  route {
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.main[count.index].id
+  }
+
+  tags = {
+    Name = "rt-backend-privada-${count.index}"
+  }
+}
+
+resource "aws_route_table_association" "main-backend-assoc" {
+  count          = length(var.private_subnet_cidr)
+  subnet_id      = element(aws_subnet.main-backend[*].id, count.index)
+  route_table_id = element(aws_route_table.main-backend-rt[*].id, count.index)
+}
 
 resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id

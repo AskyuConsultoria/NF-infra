@@ -25,6 +25,11 @@ variable "public_subnet_cidr" {
 }
 
 variable "private_subnet_cidr" {
+  type = list(any)
+  description = "CIDR da Subnet Privada"
+}
+
+variable "private_subnet_cidr_db" {
   type = string
   description = "CIDR da Subnet Privada"
 }

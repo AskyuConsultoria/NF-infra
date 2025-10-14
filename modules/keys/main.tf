@@ -3,7 +3,7 @@ resource "aws_key_pair" "main-public" {
   public_key = file("~/.ssh/pbkey-ges.pub")
 }
 
-resource "aws_key_pair" "main-private" {
+resource "aws_key_pair" "main-backend" {
   key_name   = "pvkey-ges"
   public_key = file("~/.ssh/pvkey-ges.pub")
 }

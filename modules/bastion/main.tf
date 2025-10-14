@@ -10,6 +10,6 @@ resource "aws_instance" "main-public" {
 
   tags = {
     Name = "instancia-publica-${count.index + 1}"
-  }
+  } 
 }
 
