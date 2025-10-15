@@ -10,6 +10,9 @@ terraform {
 
 module "keys" {
   source = "./modules/keys"
+  pbkey-ges-pub = var.pbkey-ges-pub
+  pvkey-ges-pub = var.pvkey-ges-pub
+  pbkey-jupyter-pub = var.pbkey-jupyter-pub
 }
 
 module "vpc" {
