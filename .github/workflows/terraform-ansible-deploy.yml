@@ -15,12 +15,12 @@ jobs:
       TF_VAR_aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
       TF_VAR_aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       TF_VAR_aws_session_token: ${{ secrets.AWS_SESSION_TOKEN }}
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+      TF_VAR_pbkey_ges_pub: ${{ secrets.PBKEY_GES_PUB }}
+      TF_VAR_pvkey_ges_pub: ${{ secrets.PVKEY_GES_PUB }}
+      TF_VAR_pbkey_jupyter_pub: ${{ secrets.PBKEY_JUPYTER_PUB }}
 
     steps:
-      # 1️⃣ Checkout do repositório
+      # 1️⃣ Checkout
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -30,7 +30,7 @@ jobs:
         with:
           terraform_version: 1.9.5
 
-      # 3️⃣ Instalar Ansible, AWS CLI e dependências
+      # 3️⃣ Install dependencies: Ansible, AWS CLI, boto3
       - name: Install Ansible & dependencies
         run: |
           sudo apt-get update -y
@@ -41,20 +41,23 @@ jobs:
           aws --version
           ansible --version
 
-      # 4️⃣ Inicializar Terraform
+      # 4️⃣ Terraform Init
       - name: Terraform Init
         run: terraform init
 
-      # 5️⃣ Aplicar Terraform
+      # 5️⃣ Terraform Apply
       - name: Terraform Apply
         run: |
           terraform apply -var-file="envs/dev.tfvars" \
             -var "aws_access_key_id=${{ secrets.AWS_ACCESS_KEY_ID }}" \
             -var "aws_secret_access_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
             -var "aws_session_token=${{ secrets.AWS_SESSION_TOKEN }}" \
+            -var "pbkey_ges_pub=${{ secrets.PBKEY_GES_PUB }}" \
+            -var "pvkey_ges_pub=${{ secrets.PVKEY_PUB }}" \
+            -var "pbkey_jupyter_pub=${{ secrets.PBKEY_JUPYTER_PUB }}" \
             -auto-approve
 
-      # 6️⃣ Capturar outputs do Terraform
+      # 6️⃣ Capture Terraform outputs
       - name: Get Terraform Outputs
         id: tf_outputs
         run: |
@@ -68,7 +71,7 @@ jobs:
           echo "DB_IP=$DB_IP" >> $GITHUB_ENV
           echo "RAW_UNS_BUCKET_NAME=$RAW_UNS_BUCKET_NAME" >> $GITHUB_ENV
 
-      # 7️⃣ Adicionar fingerprints SSH
+      # 7️⃣ Add SSH fingerprints
       - name: Add SSH Known Hosts
         run: |
           mkdir -p ~/.ssh
@@ -76,31 +79,20 @@ jobs:
             ssh-keyscan -H "$ip" >> ~/.ssh/known_hosts
           done
 
-      # 8️⃣ Enviar chaves privadas para instâncias
-      - name: Send Private Keys to Instances
-        run: |
-          for i in "${!PUBLIC_IP[@]}"; do
-            PUB_IP="${PUBLIC_IP[$i]}"
-            PRIV_IP="${PRIVATE_IP[$i]}"
-            scp -i ~/.ssh/pbkey-ges -o StrictHostKeyChecking=no ~/.ssh/pvkey-ges "ubuntu@$PUB_IP:~"
-            ssh -i ~/.ssh/pbkey-ges "ubuntu@$PUB_IP" "ssh-keyscan -H $PRIV_IP" >> ~/.ssh/known_hosts
-          done
-          ssh -i ~/.ssh/pbkey-ges "ubuntu@${PUBLIC_IP[0]}" "ssh-keyscan -H $DB_IP" >> ~/.ssh/known_hosts
-
-      # 9️⃣ Upload do inventory.ini para o S3
+      # 8️⃣ Upload inventory.ini to S3
       - name: Upload inventory.ini to S3
         run: |
           aws s3 cp inventory.ini s3://$RAW_UNS_BUCKET_NAME/inventory.ini
           echo "https://$RAW_UNS_BUCKET_NAME.s3.amazonaws.com/inventory.ini" > inventory_url.txt
 
-      # 🔹 Upload da URL como artifact
+      # 9️⃣ Upload inventory URL artifact
       - name: Upload inventory URL artifact
         uses: actions/upload-artifact@v4
         with:
           name: inventory-url
           path: inventory_url.txt
 
-      # 🔟 Rodar Playbooks do Ansible
+      # 🔟 Run Ansible Playbooks
       - name: Run Ansible Playbooks
         run: |
           ansible-playbook -i inventory.ini deploy-config.yaml
@@ -108,7 +100,7 @@ jobs:
           ansible-playbook -i inventory.ini deploy-backend.yaml
           ansible-playbook -i inventory.ini deploy-frontend.yaml
 
-      # 1️⃣1️⃣ Summary final
+      # 1️⃣1️⃣ Summary
       - name: Summary
         run: |
           echo "✅ Infraestrutura criada com sucesso!"
