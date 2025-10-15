@@ -2,9 +2,6 @@ name: Terraform + Ansible Deploy + Inventory S3
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
 
 jobs:
   deploy:
@@ -52,9 +49,9 @@ jobs:
             -var "aws_access_key_id=${{ secrets.AWS_ACCESS_KEY_ID }}" \
             -var "aws_secret_access_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
             -var "aws_session_token=${{ secrets.AWS_SESSION_TOKEN }}" \
-            -var "pbkey_ges_pub=${{ secrets.PBKEY_GES_PUB }}" \
-            -var "pvkey_ges_pub=${{ secrets.PVKEY_PUB }}" \
-            -var "pbkey_jupyter_pub=${{ secrets.PBKEY_JUPYTER_PUB }}" \
+            -var "pbkey-ges-pub=${{ secrets.PBKEY_GES_PUB }}" \
+            -var "pvkey-ges-pub=${{ secrets.PVKEY_PUB }}" \
+            -var "pbkey-jupyter-pub=${{ secrets.PBKEY_JUPYTER_PUB }}" \
             -auto-approve
 
       # 6️⃣ Capture Terraform outputs
