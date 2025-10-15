@@ -28,9 +28,11 @@ jobs:
       - name: Install Ansible & dependencies
         run: |
           sudo apt-get update -y
-          sudo apt-get install -y ansible python3-pip jq unzip sshpass awscli
+          sudo apt-get install -y python3-pip jq unzip sshpass
           pip3 install --upgrade pip
-          pip3 install boto3 botocore community.docker
+          pip3 install ansible awscli boto3 botocore community.docker
+          aws --version
+          ansible --version
 
       - name: Terraform Init
         run: terraform init
