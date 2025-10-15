@@ -1,55 +1,86 @@
+locals {
+  availability_zones = ["${var.aws_region}a", "${var.aws_region}b"]
+}
+
 resource "aws_vpc" "main" {
   cidr_block           = var.vpc_cidr_block
   enable_dns_hostnames = true
   enable_dns_support   = true
 
-  tags = {
-    Name = "vpc-01"
-  }
+  tags = { Name = "vpc-01" }
 }
 
 resource "aws_subnet" "main-public" {
   vpc_id                  = aws_vpc.main.id
-  cidr_block              = var.public_subnet_cidr
+  count                   = length(var.public_subnet_cidr)
+  cidr_block              = element(var.public_subnet_cidr, count.index)
+  availability_zone       = element(local.availability_zones, count.index)
   map_public_ip_on_launch = true
 
-  tags = {
-    Name = "subnet-publica"
-  }
+  tags = { Name = "subnet-public-${count.index}" }
 }
+
 
 resource "aws_subnet" "main-private" {
   vpc_id     = aws_vpc.main.id
-  cidr_block = var.private_subnet_cidr 
+  cidr_block = var.private_subnet_cidr_db 
 
   tags = {
-    Name = "subnet-privada"
+    Name = "subnet-db"
   }
 }
 
+
+resource "aws_subnet" "main-backend" {
+  count             = length(var.private_subnet_cidr)
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = element(var.private_subnet_cidr,count.index)
+  availability_zone = element(local.availability_zones, count.index)
+  map_public_ip_on_launch = false
+
+  tags = {
+    Name = "private-subnet-${count.index}"
+    Role = "main-backend"
+  }
+}
+
+resource "aws_route_table" "main-backend-rt" {
+  count  = length(var.private_subnet_cidr)
+  vpc_id = aws_vpc.main.id
+
+  route {
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.main[count.index].id
+  }
+
+  tags = {
+    Name = "rt-backend-privada-${count.index}"
+  }
+}
+
+resource "aws_route_table_association" "main-backend-assoc" {
+  count          = length(var.private_subnet_cidr)
+  subnet_id      = element(aws_subnet.main-backend[*].id, count.index)
+  route_table_id = element(aws_route_table.main-backend-rt[*].id, count.index)
+}
 
 resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
-  tags = {
-    Name = "igw"
-  }
+  tags   = { Name = "igw" }
 }
 
-resource "aws_eip" "main-public" {
-  vpc = true
-
-  tags = {
-    Name = "eip-natgw"
-  }
+resource "aws_eip" "nat" {
+  count = length(local.availability_zones)
+  vpc   = true
+  tags  = { Name = "eip-natgw-${count.index}" }
 }
 
 resource "aws_nat_gateway" "main" {
-  allocation_id = aws_eip.main-public.id
-  subnet_id     = aws_subnet.main-public.id
+  count         = length(local.availability_zones)
+  allocation_id = aws_eip.nat[count.index].id
+  subnet_id     = aws_subnet.main-public[count.index].id
 
-  tags = {
-    Name = "igw-nat"
-  }
+  tags = { Name = "natgw-${count.index}" }
 }
 
 resource "aws_route_table" "main-public" {
@@ -60,9 +91,7 @@ resource "aws_route_table" "main-public" {
     gateway_id = aws_internet_gateway.main.id
   }
 
-  tags = {
-    Name = "rt-publica"
-  }
+  tags = { Name = "rt-public" }
 }
 
 resource "aws_route_table" "main-private" {
@@ -70,23 +99,24 @@ resource "aws_route_table" "main-private" {
 
   route {
     cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.main.id
+    nat_gateway_id = aws_nat_gateway.main[0].id  
   }
 
-  tags = {
-    Name = "rt-privada"
-  }
+  tags = { Name = "rt-privada" }
 }
 
 resource "aws_route_table_association" "main-public" {
-  subnet_id      = aws_subnet.main-public.id
+  count          = length(aws_subnet.main-public)
+  subnet_id      = element(aws_subnet.main-public[*].id, count.index)
   route_table_id = aws_route_table.main-public.id
 }
 
-resource "aws_route_table_association" "main-private" {
+
+resource "aws_route_table_association" "private" {
   subnet_id      = aws_subnet.main-private.id
   route_table_id = aws_route_table.main-private.id
 }
+
 
 resource "aws_security_group" "main" {
   name        = "main-sg"
@@ -105,153 +135,5 @@ resource "aws_security_group" "main" {
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
-
-resource "aws_network_acl" "public_acl" {
-  vpc_id = aws_vpc.main.id
-
-  subnet_ids = [aws_subnet.main-public.id]
-
-    ingress {
-    rule_no    = 1
-    protocol   = "-1"
-    action     = "allow"
-    cidr_block = "0.0.0.0/0"
-    from_port  = 0
-    to_port    = 0
-  }
-
-#   ingress {
-#     rule_no    = 100
-#     protocol   = "tcp"
-#     action     = "allow"
-#     cidr_block = "0.0.0.0/0"
-#     from_port  = 22
-#     to_port    = 22
-#   }
-
-#   ingress {
-#     rule_no    = 200
-#     protocol   = "tcp"
-#     action     = "allow"
-#     cidr_block = "0.0.0.0/0"
-#     from_port  = 80
-#     to_port    = 80
-#   }
-
-#   ingress {
-#     rule_no    = 201
-#     protocol   = "tcp"
-#     action     = "allow"
-#     cidr_block = "0.0.0.0/0"
-#     from_port  = 8080
-#     to_port    = 8080
-#   }
-
-#   ingress {
-#     rule_no    = 300
-#     protocol   = "tcp"
-#     action     = "allow"
-#     cidr_block = "0.0.0.0/0"
-#     from_port  = 443
-#     to_port    = 443
-#   }
-
-#   ingress {
-#     rule_no    = 400
-#     protocol   = "tcp"
-#     action     = "allow"
-#     cidr_block = "0.0.0.0/0"
-#     from_port  = 32000
-#     to_port    = 65535
-#   }
-
-  egress {
-    rule_no    = 500
-    protocol   = "-1"
-    action     = "allow"
-    cidr_block = "0.0.0.0/0"
-    from_port  = 0
-    to_port    = 0
-  }
-}
-
-resource "aws_network_acl" "private_acl" {
-  vpc_id = aws_vpc.main.id
-
-  subnet_ids = [aws_subnet.main-private.id]
-
-   ingress {
-    rule_no    = 1
-    protocol   = "-1"
-    action     = "allow"
-    cidr_block = "0.0.0.0/0"
-    from_port  = 0
-    to_port    = 0
-  }
-
-#   ingress {
-#     rule_no    = 100
-#     protocol   = "tcp"
-#     action     = "allow"
-#     cidr_block = "10.0.0.0/24"
-#     from_port  = 22
-#     to_port    = 22
-#   }
-
-#   ingress {
-#     rule_no    = 200
-#     protocol   = "tcp"
-#     action     = "allow"
-#     cidr_block = "10.0.0.0/24"
-#     from_port  = 80
-#     to_port    = 80
-#   }
-
-#   ingress {
-#     rule_no    = 300
-#     protocol   = "tcp"
-#     action     = "allow"
-#     cidr_block = "10.0.0.0/24"
-#     from_port  = 443
-#     to_port    = 443
-#   }
-
-#   ingress {
-#     rule_no    = 301
-#     protocol   = "tcp"
-#     action     = "allow"
-#     cidr_block = "10.0.0.0/24"
-#     from_port  = 3306
-#     to_port    = 3306
-#   }
-
-#   ingress {
-#     rule_no    = 302
-#     protocol   = "tcp"
-#     action     = "allow"
-#     cidr_block = "10.0.0.0/24"
-#     from_port  = 8080
-#     to_port    = 8080
-#   }
-
-#   ingress {
-#     rule_no    = 400
-#     protocol   = "tcp"
-#     action     = "allow"
-#     cidr_block = "0.0.0.0/0"
-#     from_port  = 32000
-#     to_port    = 65535
-#   }
-
-  egress {
-    rule_no    = 500
-    protocol   = "-1"
-    action     = "allow"
-    cidr_block = "0.0.0.0/0"
-    from_port  = 0
-    to_port    = 0
   }
 }

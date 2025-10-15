@@ -2,8 +2,8 @@
 
 PUBLIC_IP=$1 
 PRIVATE_IP=$2   
-BASTION_KEY="./chaves/pbkey-ges" 
-PRIVATE_KEY="~/.ssh/pbkey-ges"  
+BASTION_KEY=~/.ssh/pbkey-ges
+PRIVATE_KEY=~/.ssh/pvkey-ges  
 LOCAL_FILE="./scripts/mysql.dockerfile"  
 LOCAL_FILE_PUBLIC="mysql.dockerfile"
 REMOTE_PATH="/tmp/"   # Diretório remoto

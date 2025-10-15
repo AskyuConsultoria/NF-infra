@@ -1,2 +1,2 @@
 terraform destroy -var-file="envs/dev.tfvars" -auto-approve
-bash main.sh
+bash ./scripts/main@v2.sh

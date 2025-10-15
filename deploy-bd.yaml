@@ -1,0 +1,20 @@
+---
+- name: Deploy da database
+  hosts: database
+  become: yes
+  tasks:
+    - name: Pull da imagem da database
+      community.docker.docker_image:
+        name: kayk4/syntro-database:latest 
+        repository: mysql-image:latest  
+        state: present
+        source: pull
+    - name: Construção do container da database 
+      community.docker.docker_container:
+        name: mysql-container
+        image: mysql-image:latest
+        state: started
+        recreate: true
+        restart_policy: always
+        published_ports:
+        - "3306:3306"

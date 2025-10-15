@@ -5,7 +5,7 @@ RAW_UNS_BUCKET_NAME=$3
 RAW_ST_BUCKET_NAME=$4
 TRUSTED_BUCKET=$5
 
-BASTION_KEY="./chaves/pbkey-ges" 
+BASTION_KEY=~/.ssh/pbkey-ges
 USER="ubuntu"
 
 chmod +x generate_conf.sh 

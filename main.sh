@@ -6,7 +6,10 @@ echo "[1] Inicializando o Terraform..."
 terraform init
 
 echo "[2] Aplicando o Terraform..."
-terraform apply -var-file="envs/dev.tfvars" -auto-approve
+terraform apply -var-file="envs/dev.tfvars" -var "aws_access_key_id=$AWS_ACCESS_KEY_ID" \
+  -var "aws_secret_access_key=$AWS_SECRET_ACCESS_KEY" \
+  -var "aws_session_token=$AWS_SESSION_TOKEN" \
+  -auto-approve
 
 echo "[3] Aguardando output do Terraform..."
 PUBLIC_IP=$(terraform output -raw bastion_public_ip)
