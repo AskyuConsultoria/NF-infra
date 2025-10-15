@@ -153,3 +153,29 @@ EOT
 
   filename = "${path.module}/inventory.ini"
 }
+
+resource "aws_s3_bucket" "ansible_inventory" {
+  bucket        = "syntro-ansible-inventory"
+  force_destroy = true
+
+  tags = {
+    Name        = "Syntro Ansible Inventory"
+  }
+}
+
+resource "aws_s3_object" "inventory" {
+  bucket = aws_s3_bucket.ansible_inventory.bucket
+  key    = "inventory.ini"
+  source = local_file.inventory_ini.filename
+
+
+  depends_on = [local_file.inventory_ini]
+}
+
+output "ansible_inventory_url" {
+  description = "URL do arquivo de inventário no S3"
+  value       = "https://${aws_s3_bucket.ansible_inventory.bucket}.s3.amazonaws.com/${aws_s3_object.inventory.key}"
+
+  depends_on = [aws_s3_object.inventory]
+}
+

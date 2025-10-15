@@ -1,23 +1,41 @@
----
-- name: Deploy geral do Front-end
+- name: Deploy Front-end com Docker e Nginx
   hosts: frontend
   become: yes
-  tasks:
-    - name: Pull da imagem do Front-end 
-      community.docker.docker_image:
-        name: kayk4/syntro-frontend:latest  
-        repository: frontend-image:latest 
-        state: present
-        source: pull 
+  vars:
+    container_name: website-container
+    frontend_image: kayk4/syntro-frontend:latest
+    nginx_template_src: templates/nginx.conf.j2
+    nginx_config_path: /etc/nginx/conf.d/default.conf
+    backend_ip: "{{ hostvars[inventory_hostname]['backend_ip'] }}"
 
-    - name: Construção do container de Front-end
+  tasks:
+    - name: Pull da imagem do Front-end
+      community.docker.docker_image:
+        name: "{{ frontend_image }}"
+        source: pull
+        state: present
+
+    - name: Criar diretório de configuração do Nginx
+      file:
+        path: /etc/nginx/conf.d
+        state: directory
+        mode: '0755'
+
+    - name: Copiar template do Nginx com backend_ip dinâmico
+      template:
+        src: "{{ nginx_template_src }}"
+        dest: "{{ nginx_config_path }}"
+        mode: '0644'
+
+    - name: Criar e iniciar container do Front-end
       community.docker.docker_container:
-        name: website-container
-        image: frontend-image:latest
+        name: "{{ container_name }}"
+        image: "{{ frontend_image }}"
         state: started
         restart_policy: always
-        recreate: true 
+        recreate: true
         published_ports:
           - "80:80"
-
+        volumes:
+          - "/etc/nginx/conf.d:/etc/nginx/conf.d:ro"
 

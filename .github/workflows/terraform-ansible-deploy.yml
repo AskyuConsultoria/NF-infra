@@ -1,0 +1,100 @@
+name: Terraform + Ansible Deploy + Inventory S3
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_DEFAULT_REGION: us-east-1
+      TF_VAR_aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      TF_VAR_aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      TF_VAR_aws_session_token: ${{ secrets.AWS_SESSION_TOKEN }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.5
+
+      - name: Install Ansible & dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y ansible python3-pip jq unzip sshpass awscli
+          pip3 install --upgrade pip
+          pip3 install boto3 botocore community.docker
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Apply
+        run: |
+          terraform apply -var-file="envs/dev.tfvars" \
+            -var "aws_access_key_id=${{ secrets.AWS_ACCESS_KEY_ID }}" \
+            -var "aws_secret_access_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
+            -var "aws_session_token=${{ secrets.AWS_SESSION_TOKEN }}" \
+            -auto-approve
+
+      - name: Get Terraform Outputs
+        id: tf_outputs
+        run: |
+          PUBLIC_IP=($(terraform output -json bastion_public_ip | jq -r '.[0][]'))
+          PRIVATE_IP=($(terraform output -json private_instance_ip | jq -r '.[0][]'))
+          DB_IP=$(terraform output -raw db_instance_ip)
+          RAW_UNS_BUCKET_NAME=$(terraform output -raw unstructured-bucket-name)
+
+          echo "PUBLIC_IP=${PUBLIC_IP[@]}" >> $GITHUB_ENV
+          echo "PRIVATE_IP=${PRIVATE_IP[@]}" >> $GITHUB_ENV
+          echo "DB_IP=$DB_IP" >> $GITHUB_ENV
+          echo "RAW_UNS_BUCKET_NAME=$RAW_UNS_BUCKET_NAME" >> $GITHUB_ENV
+
+      - name: Add SSH Known Hosts
+        run: |
+          mkdir -p ~/.ssh
+          for ip in $PUBLIC_IP; do
+            ssh-keyscan -H "$ip" >> ~/.ssh/known_hosts
+          done
+
+      - name: Send Private Keys to Instances
+        run: |
+          for i in "${!PUBLIC_IP[@]}"; do
+            PUB_IP="${PUBLIC_IP[$i]}"
+            PRIV_IP="${PRIVATE_IP[$i]}"
+            scp -i ~/.ssh/pbkey-ges -o StrictHostKeyChecking=no ~/.ssh/pvkey-ges "ubuntu@$PUB_IP:~"
+            ssh -i ~/.ssh/pbkey-ges "ubuntu@$PUB_IP" "ssh-keyscan -H $PRIV_IP" >> ~/.ssh/known_hosts
+          done
+          ssh -i ~/.ssh/pbkey-ges "ubuntu@${PUBLIC_IP[0]}" "ssh-keyscan -H $DB_IP" >> ~/.ssh/known_hosts
+
+      - name: Upload inventory.ini to S3
+        run: |
+          aws s3 cp inventory.ini s3://$RAW_UNS_BUCKET_NAME/inventory.ini
+          echo "https://$RAW_UNS_BUCKET_NAME.s3.amazonaws.com/inventory.ini" > inventory_url.txt
+
+      - name: Upload inventory URL artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: inventory-url
+          path: inventory_url.txt
+
+      - name: Run Ansible Playbooks
+        run: |
+          ansible-playbook -i inventory.ini deploy-config.yaml
+          ansible-playbook -i inventory.ini deploy-bd.yaml
+          ansible-playbook -i inventory.ini deploy-backend.yaml
+          ansible-playbook -i inventory.ini deploy-frontend.yaml
+
+      - name: Summary
+        run: |
+          echo "✅ Infraestrutura criada com sucesso!"
+          echo "🌐 IP Público: $PUBLIC_IP"
+          echo "🔒 IP Privado: $PRIVATE_IP"
+          echo "🪣 Bucket RAW: $RAW_UNS_BUCKET_NAME"
+          echo "🔗 Inventory URL: https://$RAW_UNS_BUCKET_NAME.s3.amazonaws.com/inventory.ini"
