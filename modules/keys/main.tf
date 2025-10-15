@@ -1,6 +1,6 @@
-variable "pbkey-ges-pub" {}
-variable "pvkey-ges-pub" {}
-variable "pbkey-jupyter-pub" {}
+
+
+
 
 resource "aws_key_pair" "main-public" {
   key_name   = "pbkey-ges"
