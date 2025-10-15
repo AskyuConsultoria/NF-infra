@@ -2,6 +2,9 @@ name: Terraform + Ansible Deploy + Inventory S3
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
 
 jobs:
   deploy:
@@ -17,26 +20,32 @@ jobs:
       AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
 
     steps:
+      # 1️⃣ Checkout do repositório
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # 2️⃣ Setup Terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.9.5
 
+      # 3️⃣ Instalar Ansible, AWS CLI e dependências
       - name: Install Ansible & dependencies
         run: |
           sudo apt-get update -y
           sudo apt-get install -y python3-pip jq unzip sshpass
           pip3 install --upgrade pip
-          pip3 install ansible awscli boto3 botocore community.docker
+          pip3 install ansible awscli boto3 botocore
+          ansible-galaxy collection install community.docker
           aws --version
           ansible --version
 
+      # 4️⃣ Inicializar Terraform
       - name: Terraform Init
         run: terraform init
 
+      # 5️⃣ Aplicar Terraform
       - name: Terraform Apply
         run: |
           terraform apply -var-file="envs/dev.tfvars" \
@@ -45,6 +54,7 @@ jobs:
             -var "aws_session_token=${{ secrets.AWS_SESSION_TOKEN }}" \
             -auto-approve
 
+      # 6️⃣ Capturar outputs do Terraform
       - name: Get Terraform Outputs
         id: tf_outputs
         run: |
@@ -58,6 +68,7 @@ jobs:
           echo "DB_IP=$DB_IP" >> $GITHUB_ENV
           echo "RAW_UNS_BUCKET_NAME=$RAW_UNS_BUCKET_NAME" >> $GITHUB_ENV
 
+      # 7️⃣ Adicionar fingerprints SSH
       - name: Add SSH Known Hosts
         run: |
           mkdir -p ~/.ssh
@@ -65,6 +76,7 @@ jobs:
             ssh-keyscan -H "$ip" >> ~/.ssh/known_hosts
           done
 
+      # 8️⃣ Enviar chaves privadas para instâncias
       - name: Send Private Keys to Instances
         run: |
           for i in "${!PUBLIC_IP[@]}"; do
@@ -75,17 +87,20 @@ jobs:
           done
           ssh -i ~/.ssh/pbkey-ges "ubuntu@${PUBLIC_IP[0]}" "ssh-keyscan -H $DB_IP" >> ~/.ssh/known_hosts
 
+      # 9️⃣ Upload do inventory.ini para o S3
       - name: Upload inventory.ini to S3
         run: |
           aws s3 cp inventory.ini s3://$RAW_UNS_BUCKET_NAME/inventory.ini
           echo "https://$RAW_UNS_BUCKET_NAME.s3.amazonaws.com/inventory.ini" > inventory_url.txt
 
+      # 🔹 Upload da URL como artifact
       - name: Upload inventory URL artifact
         uses: actions/upload-artifact@v4
         with:
           name: inventory-url
           path: inventory_url.txt
 
+      # 🔟 Rodar Playbooks do Ansible
       - name: Run Ansible Playbooks
         run: |
           ansible-playbook -i inventory.ini deploy-config.yaml
@@ -93,6 +108,7 @@ jobs:
           ansible-playbook -i inventory.ini deploy-backend.yaml
           ansible-playbook -i inventory.ini deploy-frontend.yaml
 
+      # 1️⃣1️⃣ Summary final
       - name: Summary
         run: |
           echo "✅ Infraestrutura criada com sucesso!"
