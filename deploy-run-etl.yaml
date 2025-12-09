@@ -1,0 +1,32 @@
+---
+- name: Run ETL Job in existing container
+  hosts: database
+  become: yes
+  vars:
+    db_host: "localhost"
+    db_user: "syntro_flat"
+    db_password: "12345678"
+    db_name: "syntro"
+    db_name_flat: "syntro_flat"
+
+  tasks:
+    - name: Ensure etl-container is running
+      community.docker.docker_container:
+        name: etl-container
+        state: started
+
+    - name: Execute ETL script in etl-container
+      community.docker.docker_container_exec:
+        container: etl-container
+        command: python /app/etl_script.py
+        env:
+          DB_HOST: "mysql-container"
+          DB_USER: "{{ db_user }}"
+          DB_PASSWORD: "{{ db_password }}"
+          DB_NAME: "{{ db_name }}"
+          DB_HOST_FLAT: "mysql-container-flat"
+          DB_PORT_FLAT: "3306"
+          DB_USER_FLAT: "{{ db_user }}"
+          DB_PASSWORD_FLAT: "{{ db_password }}"
+          DB_NAME_FLAT: "{{ db_name_flat }}"
+        detach: no

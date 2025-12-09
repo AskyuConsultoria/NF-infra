@@ -1,3 +1,3 @@
-variable "pbkey-ges-pub" {}
-variable "pvkey-ges-pub" {}
-variable "pbkey-jupyter-pub" {}
+//variable "pbkey-ges-pub" {}
+//variable "pvkey-ges-pub" {}
+//variable "pbkey-jupyter-pub" {}

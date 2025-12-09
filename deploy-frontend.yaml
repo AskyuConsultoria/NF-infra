@@ -9,12 +9,6 @@
     backend_ip: "{{ hostvars[inventory_hostname]['backend_ip'] }}"
 
   tasks:
-    - name: Pull da imagem do Front-end
-      community.docker.docker_image:
-        name: "{{ frontend_image }}"
-        source: pull
-        state: present
-
     - name: Criar diretório de configuração do Nginx
       file:
         path: /etc/nginx/conf.d
@@ -34,6 +28,7 @@
         state: started
         restart_policy: always
         recreate: true
+        pull: true
         published_ports:
           - "80:80"
         volumes:

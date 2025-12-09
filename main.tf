@@ -9,10 +9,7 @@ terraform {
 
 
 module "keys" {
-  source = "./modules/keys"
-  pbkey-ges-pub = var.pbkey-ges-pub
-  pvkey-ges-pub = var.pvkey-ges-pub
-  pbkey-jupyter-pub = var.pbkey-jupyter-pub
+  source = "./modules/keys" 
 }
 
 module "vpc" {
@@ -132,9 +129,12 @@ output "vpc_id" {
 }
 
 resource "local_file" "inventory_ini" {
-  content = <<EOT
+  content = <<-EOT
 [backend]
-${join("\n", [for ip in module.bastion.bastion_public_ip : "${ip} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/pbkey-ges"])}
+${join("\n", [
+  for idx, ip in module.private_instance.private_instance_ip :
+  "${ip} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/pvkey-ges ansible_ssh_common_args='-o ProxyCommand=\"ssh -i ~/.ssh/pbkey-ges -W %h:%p  ubuntu@${element(module.bastion.bastion_public_ip, idx)}\"'"
+])}
 
 [backend:vars]
 aws_access_key_id=${var.aws_access_key_id}
@@ -143,18 +143,24 @@ aws_session_token=${var.aws_session_token}
 aws_region=us-east-1
 aws_bucket_name=${module.bucket.raw_unstructured_bucket_name}
 spring_datasource_url=jdbc:mysql://${module.db_instance.db_instance_ip}:3306/syntro
+CORS_ALLOWED_ORIGINS=${join(",", [for ip in module.bastion.bastion_public_ip : "http://${ip}"])}
 
 [frontend]
 ${join("\n", [
   for idx, ip in module.bastion.bastion_public_ip :
   "${ip} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/pbkey-ges backend_ip=${element(module.private_instance.private_instance_ip, idx)}"
 ])}
+  
+[grafana] 
+${module.jupyter.jupyter_public_ip} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/pbkey-jupyter 
 
 [database]
 ${module.db_instance.db_instance_ip} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/pvkey-ges ansible_ssh_common_args='-o ProxyCommand="ssh -i ~/.ssh/pbkey-ges -W %h:%p ubuntu@${element(module.bastion.bastion_public_ip,0)}"'
 EOT
 
-  filename = "${path.module}/inventory.ini"
+
+
+filename = "${path.module}/inventory.ini"
 }
 
 resource "aws_s3_bucket" "ansible_inventory" {
@@ -162,7 +168,7 @@ resource "aws_s3_bucket" "ansible_inventory" {
   force_destroy = true
 
   tags = {
-    Name        = "Syntro Ansible Inventory"
+    Name        = "Trackpoint Ansible Inventory"
   }
 }
 

@@ -1,0 +1,44 @@
+;;;
+;Nome;Descrição;Tipo
+;id_nota_fiscal;Identificador único da nota fiscal;int
+;numero_identificador;Número da nota fiscal (código único);varchar
+;cnpj_emitente;CNPJ da empresa emissora da nota;varchar
+;descricao;Descrição geral da nota fiscal;varchar
+;valor_total;Valor total da nota fiscal;double
+;data_emissao;Data em que a nota fiscal foi emitida;date
+;data_vencimento;Data de vencimento da nota fiscal;date
+;data_aprovacao;Data de aprovação pelo gestor (quando houver);date
+;status;Estado atual da nota fiscal (pendente, aprovada, inválida, etc.);varchar
+;motivo_invalidacao;Motivo pelo qual a nota foi invalidada (erro, duplicidade, etc.);varchar
+;id_usuario;Identificador do usuário responsável pela ação;int
+;nome_usuario;Nome completo do usuário que realizou a ação;varchar
+;cargo_usuario;Cargo ou função do usuário (gestor, auditor, emissor, etc.);varchar
+;id_empresa;Identificador da empresa vinculada à nota;int
+;nome_empresa;Nome da empresa associada à nota;varchar
+;cnpj_empresa;CNPJ da empresa associada;varchar
+;id_fornecedor;Identificador do fornecedor;int
+;nome_fornecedor;Nome do fornecedor que emitiu a nota;varchar
+;id_log_validacao;Identificador do log de validação;int
+;tipo_validacao;Tipo de validação realizada (ex: layout, assinatura, sefaz);varchar
+;data_validacao;Data em que a validação ocorreu;timestamp
+;resultado_validacao;Resultado da validação (sucesso, erro, falha, etc.);varchar
+;id_log_atividade;Identificador do log de atividade;int
+;descricao_atividade;Descrição da ação realizada pelo usuário (aprovação, recusa, etc.);varchar
+;data_atividade;Data e hora da ação registrada;timestamp
+;id_contrato;Identificador do contrato vinculado à nota;int
+;nome_servico;Nome do serviço descrito no contrato;varchar
+;valor_contrato;Valor total do contrato;double
+;data_realizacao;Data de realização do serviço ou entrega;date
+;id_departamento;Identificador do departamento responsável;int
+;nome_departamento;Nome do departamento relacionado à nota;varchar
+;id_comentario;Identificador de comentário na nota;int
+;descricao_comentario;Texto do comentário feito sobre a nota;varchar
+;tipo_comentario;Tipo de comentário;varchar
+;id_endereco;Identificador de endereço cadastrado;int
+;cidade;Cidade do endereço da empresa ou fornecedor;varchar
+;estado;UF do endereço da empresa ou fornecedor;varchar
+;cep;CEP do endereço cadastrado;varchar
+;tempo_analise;Tempo (em dias) entre o recebimento e a aprovação da nota;double
+;prioridade;Grau de prioridade da nota (baixa, média, alta);varchar
+;status_pagamento;Status de pagamento da nota (paga, a vencer, vencida);varchar
+;tipo_erro;Categoria do erro de validação (layout inválido, arquivo incorreto, etc.);varchar

@@ -1,0 +1,51 @@
+---
+- name: Run ETL Job
+  hosts: database
+  become: yes
+  vars:
+    db_host: "localhost"
+    db_user: "syntro_flat"
+    db_password: "12345678"
+    db_name: "syntro"
+    db_name_flat: "syntro_flat"
+
+  tasks:
+    - name: Create ETL build directory
+      file:
+        path: /tmp/etl_build
+        state: directory
+
+    - name: Copy ETL files
+      copy:
+        src: "{{ item }}"
+        dest: /tmp/etl_build/
+      with_items:
+        - etl.dockerfile
+        - etl_script.py
+
+    - name: Build ETL Docker image
+      docker_image:
+        name: etl-image
+        build:
+          path: /tmp/etl_build
+          dockerfile: etl.dockerfile
+        source: build
+
+    - name: Run ETL container
+      docker_container:
+        name: etl-container
+        image: etl-image
+        state: started
+        detach: no
+        networks:
+          - name: etl_network
+        env:
+          DB_HOST: "mysql-container"
+          DB_USER: "{{ db_user }}"
+          DB_PASSWORD: "{{ db_password }}"
+          DB_NAME: "{{ db_name }}"
+          DB_HOST_FLAT: "mysql-container-flat"
+          DB_PORT_FLAT: "3306" # Port 3306 is internal to the Docker network
+          DB_USER_FLAT: "{{ db_user }}"
+          DB_PASSWORD_FLAT: "{{ db_password }}"
+          DB_NAME_FLAT: "{{ db_name_flat }}"

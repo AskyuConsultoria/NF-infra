@@ -2,19 +2,47 @@
 - name: Deploy da database
   hosts: database
   become: yes
-  tasks:
-    - name: Pull da imagem da database
-      community.docker.docker_image:
-        name: kayk4/syntro-database:latest 
-        repository: mysql-image:latest  
+  tasks: 
+    - name: Install PyMySQL on database host
+      ansible.builtin.apt:
+        name: python3-pymysql
         state: present
-        source: pull
+      become: yes
+
+    - name: Create Docker network for ETL
+      community.docker.docker_network:
+        name: etl_network
+        state: present
+
     - name: Construção do container da database 
       community.docker.docker_container:
         name: mysql-container
-        image: mysql-image:latest
+        image: kayk4/syntro-database:latest
         state: started
         recreate: true
+        pull: true
         restart_policy: always
         published_ports:
-        - "3306:3306"
+        - "3306:3306" # Re-add published port for host access
+        networks:
+          - name: etl_network
+
+    - name: Wait for MySQL to be fully ready
+      ansible.builtin.wait_for:
+        port: 3306
+        host: "localhost"
+        timeout: 300 # Wait up to 300 seconds
+        delay: 10 # Start checking after 10 seconds
+        state: started
+
+    - name: Configure syntro_flat user in source DB (mysql-container)
+      community.mysql.mysql_query:
+        login_user: root
+        login_password: "12345678" # Assuming root password is '12345678'
+        query:
+          - "DROP USER IF EXISTS 'syntro_flat'@'%';"
+          - "DROP USER IF EXISTS 'syntro_flat'@'localhost';"
+          - "CREATE USER 'syntro_flat'@'%' IDENTIFIED WITH mysql_native_password BY '12345678';"
+          - "GRANT ALL PRIVILEGES ON syntro.* TO 'syntro_flat'@'%';"
+          - "GRANT ALL PRIVILEGES ON syntro_flat.* TO 'syntro_flat'@'%';"
+          - "FLUSH PRIVILEGES;"

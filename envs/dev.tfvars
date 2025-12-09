@@ -6,8 +6,8 @@ pbkey_jupyter_name = "pbkey-jupyter"
 # Valores das instâncias
 ami = "ami-04b4f1a9cf54c11d0"   
 bastion_instance_type = "t2.micro"
-private_instance_type = "t2.micro"
-jupyter_instance_type = "t2.micro"
+private_instance_type = "t2.medium"
+jupyter_instance_type = "t2.small"
 
 # Configurações da VPC
 vpc_cidr_block = "10.0.0.0/21"

@@ -27,6 +27,8 @@ echo "DEBUG: PUBLIC_IP=$PRIVATE_IP"
 DB_IP=$(terraform output -raw db_instance_ip)
 ANSIBLE_INVENTORY_URL=$(terraform output -raw ansible_inventory_url)
 echo "DEBUG: DB_IP=$DB_IP"
+GRAFANA_IP=$(terraform output -raw jupyter_public_ip)
+echo "DEBUG: GRAFANA_IP=$GRAFANA_IP"
 
 RAW_UNS_BUCKET_NAME=$(terraform output -raw unstructured-bucket-name)
 RAW_ST_BUCKET_NAME=$(terraform output -raw structured-bucket-name)
@@ -42,14 +44,22 @@ for i in "${!PUBLIC_IP[@]}"; do
   PUB_IP="${PUBLIC_IP[$i]}"
   PRIV_IP="${PRIVATE_IP[$i]}"
 
-  # Enviar chave privada
-  scp -i ~/.ssh/pbkey-ges -o StrictHostKeyChecking=no ~/.ssh/pvkey-ges "ubuntu@$PUB_IP:~"
+  # Enviar chave privada (método robusto)
+  echo "Copiando pvkey-ges para $PUB_IP..."
+  ssh -i ~/.ssh/pbkey-ges -o StrictHostKeyChecking=no "ubuntu@$PUB_IP" "touch /home/ubuntu/pvkey-ges"
+  ssh -i ~/.ssh/pbkey-ges -o StrictHostKeyChecking=no "ubuntu@$PUB_IP" "chmod 600 /home/ubuntu/pvkey-ges"
+  cat ~/.ssh/pvkey-ges | ssh -i ~/.ssh/pbkey-ges -o StrictHostKeyChecking=no "ubuntu@$PUB_IP" "cat > /home/ubuntu/pvkey-ges"
 
   # Salvar fingerprint do IP privado via túnel SSH
   ssh -i ~/.ssh/pbkey-ges "ubuntu@$PUB_IP" "ssh-keyscan -H $PRIV_IP" >>~/.ssh/known_hosts
 done
 
 ssh -i ~/.ssh/pbkey-ges "ubuntu@${PUBLIC_IP[0]}" "ssh-keyscan -H $DB_IP" >>~/.ssh/known_hosts
+
+if [ -n "$GRAFANA_IP" ]; then
+  echo "Salvando fingerprint do Grafana..."
+  ssh-keyscan -H "$GRAFANA_IP" >>~/.ssh/known_hosts
+fi
 
 if [[ -z "$PUBLIC_IP" || -z "$PRIVATE_IP" ]]; then
   echo "❌ Erro: Não foi possível obter os IPs das instâncias!"
@@ -61,6 +71,9 @@ ansible-playbook -i inventory.ini deploy-config.yaml
 ansible-playbook -i inventory.ini deploy-bd.yaml
 ansible-playbook -i inventory.ini deploy-backend.yaml
 ansible-playbook -i inventory.ini deploy-frontend.yaml
+ansible-playbook -i inventory.ini deploy-grafana.yaml
+ansible-playbook -i inventory.ini deploy-flat-bd.yaml
+ansible-playbook -i inventory.ini deploy-etl.yaml
 
 echo "[7] Infraestrutura criada com sucesso!"
 echo "[8] IPs obtidos com sucesso!"

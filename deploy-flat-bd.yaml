@@ -1,0 +1,22 @@
+---
+- name: Deploy da database
+  hosts: database
+  become: yes
+  tasks:
+    - name: Create Docker network for ETL
+      community.docker.docker_network:
+        name: etl_network
+        state: present
+
+    - name: Construção do container da database 
+      community.docker.docker_container:
+        name: mysql-container-flat
+        image: kayk4/syntro-flat:latest 
+        state: started
+        recreate: true
+        pull: true
+        restart_policy: always
+        published_ports:
+        - "3307:3306"
+        networks:
+          - name: etl_network

@@ -6,9 +6,9 @@ variable "aws_region" {
   default = "us-east-1"
 }
 
-variable "pbkey-ges-pub" {}
-variable "pvkey-ges-pub" {}
-variable "pbkey-jupyter-pub" {}
+//variable "pbkey-ges-pub" {}
+//variable "pvkey-ges-pub" {}
+//variable "pbkey-jupyter-pub" {}
 
 
 variable "aws_access_key_id" {}
